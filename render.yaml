@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: volume-bot
+    env: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: python volume_bot.py
+    autoDeploy: false
+
+    # ★★★★★ 매일 한국 시간 오전 8시 10분에 실행 ★★★★★
+    schedules:
+      - name: daily-scan
+        cron: "10 23 * * *"   # UTC 기준 → 한국 시간 오전 8시 10분
+        # (11월~2월은 9시 10분이 되려면 "10 0 * * *" 로 바꾸세요 - 서머타임 없음)

@@ -8,8 +8,8 @@ import asyncio
 from telegram import Bot
 
 # ================== 여기만 수정 ==================
-TELEGRAM_TOKEN = "여기에_당신_토큰_넣기"   # ← 꼭 바꾸세요!
-CHAT_ID = None                            # 자동으로 잡아줍니다
+TELEGRAM_TOKEN = "8220835430:AAEtp-mzeD7Vo24OSn93CiTxRCbsMfXIzjI"   # ← 여기만 본인 토큰 넣기
+CHAT_ID = 1798532618  # 처음엔 None → 실행하면 본인 채팅 ID 자동 출력해줌
 # =================================================
 
 bot = Bot(token=TELEGRAM_TOKEN)

@@ -34,18 +34,45 @@ async def send_message(text):
     await bot.send_message(chat_id=CHAT_ID, text=text, parse_mode='HTML')
 
 # ---------- 빗썸 상장 코인 목록 ----------
+# get_target_coins() 함수만 아래로 완전히 교체하세요
 def get_target_coins():
     url = "https://api.coingecko.com/api/v3/coins/markets"
-    params = {'vs_currency': 'usd', 'order': 'market_cap_desc', 'per_page': 150, 'page': 1}
-    data = requests.get(url, params=params, timeout=10).json()
-    bithumb_symbols = {'BTC','ETH','XRP','SOL','ADA','DOGE','DOT','MATIC','AVAX','TRX','LINK','LTC','BCH','ETC','XLM','FIL','ATOM','HBAR','VET','NEAR','ALGO','ICP','SUI','APT','INJ','TON','WIF','PEPE','BONK','FLOKI','ONDO','HNT','SEI','FTM','RUNE','GRT','AAVE','XMR','EOS','XTZ','NEO','KAS','FLOW','SAND','MANA','CHZ','AXS','ENA','STRK','WLD','ARB','OP','IMX','STX','MKR','THETA','ZEC','WAVES','QTUM','BTG','ICX','ONG','ORBS','IOST','STEEM','HIVE','KAVA','ANKR','AERGO','TT','CRO','FX','AKT','PYTH','WEMIX','MEW','BIGTIME','PIXEL','ALT','SNT','AHT','BLUR','ACE','METIS','GMT','ASTR','BOME','TNSR','PRIME','WOO','JTO'}
-    coins = []
-    for coin in data:
-        sym = coin['symbol'].upper()
-        if sym in bithumb_symbols and coin.get('market_cap', 0) > 300_000_000:  # 시총 3억 달러 이상
-            coins.append((sym, coin.get('market_cap_rank', 999)))
-    return sorted(coins, key=lambda x: x[1])[:120]
+    params = {
+        'vs_currency': 'usd',
+        'order': 'market_cap_desc',
+        'per_page': 150,
+        'page': 1,
+        'sparkline': False
+    }
+    try:
+        resp = requests.get(url, params=params, timeout=15)
+        data = resp.json()
 
+        # ★★★★★ 여기부터 추가된 방어 코드 ★★★★★
+        if isinstance(data, list):          # 정상적인 경우
+            coins_data = data
+        elif isinstance(data, dict) and 'error' in data:  # 에러 메시지 온 경우
+            print(f"CoinGecko 에러: {data.get('error')}")
+            return []
+        else:
+            print("CoinGecko 응답 형식 이상:", data)
+            return []
+        # ★★★★★ 여기까지 ★★★★★
+
+        bithumb_symbols = {'BTC','ETH','XRP','SOL','ADA','DOGE','DOT','MATIC','AVAX','TRX','LINK','LTC','BCH','ETC','XLM','FIL','ATOM','HBAR','VET','NEAR','ALGO','ICP','SUI','APT','INJ','TON','WIF','PEPE','BONK','FLOKI','ONDO','HNT','SEI','FTM','RUNE','GRT','AAVE','XMR','EOS','XTZ','NEO','KAS','FLOW','SAND','MANA','CHZ','AXS','ENA' ,'STRK','WLD','ARB','OP','IMX','STX','MKR','THETA','ZEC','WAVES','QTUM','BTG','ICX','ONG','ORBS','IOST','STEEM','HIVE','KAVA','ANKR','AERGO','TT','CRO','FX','AKT','PYTH','WEMIX','MEW','BIGTIME','PIXEL','ALT','SNT','AHT','BLUR','ACE','METIS','GMT','ASTR','BOME','TNSR','PRIME','WOO','JTO'}
+        coins = []
+        for coin in coins_data:
+            sym = coin.get('symbol', '').upper()
+            if not sym:
+                continue
+            if sym in bithumb_symbols and coin.get('market_cap', 0) > 300_000_000:
+                rank = coin.get('market_cap_rank', 999)
+                coins.append((sym, rank))
+        return sorted(coins, key=lambda x: x[1])[:120]
+
+    except Exception as e:
+        print(f"get_target_coins 오류: {e}")
+        return []
 # ---------- 빗썸 캔들 데이터 ----------
 def get_bithumb_1d(symbol):
     try:
@@ -114,4 +141,5 @@ async def send_message(text):
     except asyncio.TimeoutError:
         print("텔레그램 타임아웃 (그래도 메시지는 갔을 가능성 99%)")
     except Exception as e:
+
         print(f"텔레그램 전송 실패: {e}")

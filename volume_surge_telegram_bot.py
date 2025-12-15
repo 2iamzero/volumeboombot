@@ -14,6 +14,11 @@ CHAT_ID = 1798532618  # 처음엔 None → 실행하면 본인 채팅 ID 자동 
 
 bot = Bot(token=TELEGRAM_TOKEN)
 
+
+headers = {'x-cg-demo-api-key': 'CG-63Nc8FyTw3h2FTGw91vWptnE'}
+resp = requests.get(url, params=params, headers=headers, timeout=30)
+
+
 # ---------- 텔레그램 메시지 보내기 ----------
 async def get_chat_id():
     global CHAT_ID
@@ -155,6 +160,7 @@ async def send_message(text):
     except Exception as e:
 
         print(f"텔레그램 전송 실패: {e}")
+
 
 
 

@@ -34,7 +34,6 @@ async def send_message(text):
     await bot.send_message(chat_id=CHAT_ID, text=text, parse_mode='HTML')
 
 # ---------- 빗썸 상장 코인 목록 ----------
-# get_target_coins() 함수만 아래로 완전히 교체하세요
 def get_target_coins():
     url = "https://api.coingecko.com/api/v3/coins/markets"
     params = {
@@ -45,33 +44,51 @@ def get_target_coins():
         'sparkline': False
     }
     try:
-        resp = requests.get(url, params=params, timeout=15)
+        resp = requests.get(url, params=params, timeout=20)  # 타임아웃 증가
+        if resp.status_code != 200:
+            print(f"CoinGecko HTTP 에러: {resp.status_code} - {resp.text}")
+            return []
+
         data = resp.json()
 
-        # ★★★★★ 여기부터 추가된 방어 코드 ★★★★★
-        if isinstance(data, list):          # 정상적인 경우
+        # ★★★★★ 완전 방어 로직 ★★★★★
+        if isinstance(data, list):
             coins_data = data
-        elif isinstance(data, dict) and 'error' in data:  # 에러 메시지 온 경우
-            print(f"CoinGecko 에러: {data.get('error')}")
+        elif isinstance(data, dict):
+            if 'error' in data:
+                print(f"CoinGecko API 에러: {data['error']}")
+            else:
+                print(f"CoinGecko dict 응답 (예상치 않음): {data}")
+            return []
+        elif isinstance(data, str):
+            print(f"CoinGecko 문자열 응답 (에러 가능성): {data}")
             return []
         else:
-            print("CoinGecko 응답 형식 이상:", data)
+            print(f"CoinGecko 알 수 없는 응답 타입: {type(data)}")
             return []
         # ★★★★★ 여기까지 ★★★★★
 
-        bithumb_symbols = {'BTC','ETH','XRP','SOL','ADA','DOGE','DOT','MATIC','AVAX','TRX','LINK','LTC','BCH','ETC','XLM','FIL','ATOM','HBAR','VET','NEAR','ALGO','ICP','SUI','APT','INJ','TON','WIF','PEPE','BONK','FLOKI','ONDO','HNT','SEI','FTM','RUNE','GRT','AAVE','XMR','EOS','XTZ','NEO','KAS','FLOW','SAND','MANA','CHZ','AXS','ENA' ,'STRK','WLD','ARB','OP','IMX','STX','MKR','THETA','ZEC','WAVES','QTUM','BTG','ICX','ONG','ORBS','IOST','STEEM','HIVE','KAVA','ANKR','AERGO','TT','CRO','FX','AKT','PYTH','WEMIX','MEW','BIGTIME','PIXEL','ALT','SNT','AHT','BLUR','ACE','METIS','GMT','ASTR','BOME','TNSR','PRIME','WOO','JTO'}
+        bithumb_symbols = {'BTC','ETH','XRP','SOL','ADA','DOGE','DOT','MATIC','AVAX','TRX','LINK','LTC','BCH','ETC','XLM','FIL','ATOM','HBAR','VET','NEAR','ALGO','ICP','SUI','APT','INJ','TON','WIF','PEPE','BONK','FLOKI','ONDO','HNT','SEI','FTM','RUNE','GRT','AAVE','XMR','EOS','XTZ','NEO','KAS','FLOW','SAND','MANA','CHZ','AXS','ENA','STRK','WLD','ARB','OP','IMX','STX','MKR','THETA','ZEC','WAVES','QTUM','BTG','ICX','ONG','ORBS','IOST','STEEM','HIVE','KAVA','ANKR','AERGO','TT','CRO','FX','AKT','PYTH','WEMIX','MEW','BIGTIME','PIXEL','ALT','SNT','AHT','BLUR','ACE','METIS','GMT','ASTR','BOME','TNSR','PRIME','WOO','JTO'}
+        
         coins = []
         for coin in coins_data:
+            if not isinstance(coin, dict):
+                continue  # 안전하게 스킵
             sym = coin.get('symbol', '').upper()
             if not sym:
                 continue
-            if sym in bithumb_symbols and coin.get('market_cap', 0) > 300_000_000:
+            market_cap = coin.get('market_cap', 0) or 0
+            if sym in bithumb_symbols and market_cap > 300_000_000:
                 rank = coin.get('market_cap_rank', 999)
                 coins.append((sym, rank))
+        
         return sorted(coins, key=lambda x: x[1])[:120]
 
+    except requests.exceptions.RequestException as e:
+        print(f"CoinGecko 요청 실패: {e}")
+        return []
     except Exception as e:
-        print(f"get_target_coins 오류: {e}")
+        print(f"get_target_coins 예외 발생: {e}")
         return []
 # ---------- 빗썸 캔들 데이터 ----------
 def get_bithumb_1d(symbol):
@@ -143,3 +160,4 @@ async def send_message(text):
     except Exception as e:
 
         print(f"텔레그램 전송 실패: {e}")
+
